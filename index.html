@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ぷよぷよ風ゲームなのぜ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #dbeafe, #e9d5ff);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            color: #7c3aed;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-top: 50px;
+        }
+
+        .game-container {
+            display: none;
+        }
+
+        .game-container.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-info {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .game-area {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+        }
+
+        .player-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .player-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 25px);
+            grid-template-rows: repeat(12, 25px);
+            gap: 1px;
+            padding: 10px;
+            background: white;
+            border: 4px solid #9ca3af;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .puyo-cell {
+            width: 25px;
+            height: 25px;
+            border: 1px solid #e5e7eb;
+            border-radius: 50%;
+            background: #f9fafb;
+        }
+
+        .puyo-red { background: #ef4444; }
+        .puyo-blue { background: #3b82f6; }
+        .puyo-green { background: #22c55e; }
+        .puyo-yellow { background: #eab308; }
+        .puyo-purple { background: #a855f7; }
+        .puyo-gray { background: #6b7280; }
+
+        .next-puyo {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .next-puyo h4 {
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        .next-puyos {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .next-single {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid #ccc;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 250px;
+        }
+
+        .controls h3 {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .controls div {
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: inline-block;
+            text-decoration: none;
+            min-width: 200px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success { background: #22c55e; color: white; }
+        .btn-success:hover { background: #16a34a; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-secondary:hover { background: #4b5563; }
+
+        .difficulty-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-top: 50px;
+        }
+
+        .difficulty-container.active {
+            display: flex;
+        }
+
+        .difficulty-btn {
+            width: 320px;
+            padding: 20px;
+            text-align: left;
+        }
+
+        .difficulty-title {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .difficulty-desc {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .winner {
+            color: #dc2626;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-left: 20px;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #6b7280;
+            margin-top: 20px;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .game-area {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- メインメニュー -->
+    <div id="menu" class="menu-container">
+        <h1>ぷよぷよ風ゲームなのぜ</h1>
+        <button class="btn btn-primary" onclick="startGame('1p')">1P 遊戯</button>
+        <button class="btn btn-success" onclick="startGame('2p')">2P 遊戯</button>
+        <button class="btn btn-danger" onclick="showDifficulty()">CPU 遊戯</button>
+    </div>
+
+    <!-- 難易度選択 -->
+    <div id="difficulty" class="difficulty-container">
+        <h1 style="font-size: 2.5rem; color: #dc2626;">CPU 難易度選択</h1>
+        <p style="font-size: 1.2rem; color: #6b7280; margin-bottom: 20px;">CPUの強さを選んでください</p>
+        
+        <button class="btn btn-success difficulty-btn" onclick="startGame('cpu', 'easy')">
+            <div class="difficulty-title">EASY</div>
+            <div class="difficulty-desc">何も壊れることなく終わるかもだぜ</div>
+        </button>
+        
+        <button class="btn btn-primary difficulty-btn" onclick="startGame('cpu', 'normal')">
+            <div class="difficulty-title">NORMAL</div>
+            <div class="difficulty-desc">マウスが気づいたら壊れてるかもだぜ</div>
+        </button>
+        
+        <button class="btn btn-danger difficulty-btn" onclick="startGame('cpu', 'hard')">
+            <div class="difficulty-title">HARD</div>
+            <div class="difficulty-desc">キーボードが気づいたら壊れてるかもだぜ</div>
+        </button>
+        
+        <button class="btn" style="background: #7c3aed; color: white;" onclick="startGame('cpu', 'lunatic')">
+            <div class="difficulty-title">LUNATIC</div>
+            <div class="difficulty-desc">気づいたらパソコンの周辺機器全部壊れてるかもだぜ</div>
+        </button>
+        
+        <button class="btn btn-secondary" onclick="showMenu()" style="margin-top: 20px;">
+            メインメニューに戻るのぜ
+        </button>
+    </div>
+
+    <!-- ゲーム画面 -->
+    <div id="game" class="game-container">
+        <h1>ぷよぷよ風ゲームなのぜ</h1>
+        
+        <div class="game-info">
+            <div id="player1-info">Player 1: <span id="player1-score">0</span></div>
+            <div id="player2-info" style="display: none;">Player 2: <span id="player2-score">0</span></div>
+            <div id="winner-info" class="winner" style="display: none;"></div>
+        </div>
+
+        <div class="game-area">
+            <!-- Player 1 -->
+            <div class="player-section">
+                <div class="player-title" id="player1-title">Player</div>
+                <div class="game-grid" id="player1-grid"></div>
+                <div class="next-puyo">
+                    <h4>Next</h4>
+                    <div class="next-puyos" id="player1-next"></div>
+                </div>
+            </div>
+
+            <!-- Player 2 (対戦時のみ表示) -->
+            <div class="player-section" id="player2-section" style="display: none;">
+                <div class="player-title" id="player2-title">Player 2</div>
+                <div class="game-grid" id="player2-grid"></div>
+                <div class="next-puyo">
+                    <h4>Next</h4>
+                    <div class="next-puyos" id="player2-next"></div>
+                </div>
+            </div>
+
+            <!-- 操作説明 -->
+            <div class="controls">
+                <h3>操作方法</h3>
+                <div><strong>Player 1:</strong></div>
+                <div>← → : 移動するぜ</div>
+                <div>↑ : 回転するぜ</div>
+                <div>↓ : 高速落下するぜ</div>
+                <div id="player2-controls" style="display: none;">
+                    <div style="margin-top: 10px;"><strong>Player 2:</strong></div>
+                    <div>A D : 移動するぜ</div>
+                    <div>W : 回転するぜ</div>
+                    <div>S : 高速落下するぜ</div>
+                </div>
+                <button class="btn btn-secondary" onclick="showMenu()" style="margin-top: 20px; width: 100%;">
+                    メニューに戻るのぜ
+                </button>
+            </div>
+        </div>
+
+        <div class="instructions">
+            同じ色の丸を4個以上繋げて消すのぜ！連鎖で相手にゴミをプレゼントだぜ！
+        </div>
+    </div>
+
+    <script>
+        // ゲーム定数
+        const COLORS = ['red', 'blue', 'green', 'yellow', 'purple'];
+        const ROWS = 12;
+        const COLS = 6;
+
+        // ゲーム状態
+        let gameMode = 'menu';
+        let cpuDifficulty = 'easy';
+        let isPlaying = false;
+        let gameInterval = null;
+        let cpuInterval = null;
+
+        let player1 = {
+            grid: [],
+            currentPuyo: null,
+            nextPuyo: null,
+            score: 0,
+            gameOver: false,
+            attackQueue: []
+        };
+
+        let player2 = {
+            grid: [],
+            currentPuyo: null,
+            nextPuyo: null,
+            score: 0,
+            gameOver: false,
+            attackQueue: []
+        };
+
+        // 画面表示関数
+        function showMenu() {
+            document.getElementById('menu').style.display = 'flex';
+            document.getElementById('difficulty').classList.remove('active');
+            document.getElementById('game').classList.remove('active');
+            stopGame();
+        }
+
+        function showDifficulty() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('difficulty').classList.add('active');
+        }
+
+        function showGame() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('difficulty').classList.remove('active');
+            document.getElementById('game').classList.add('active');
+        }
+
+        // ゲーム初期化
+        function startGame(mode, difficulty = 'easy') {
+            gameMode = mode;
+            cpuDifficulty = difficulty;
+            
+            // プレイヤー初期化
+            initPlayer(player1);
+            if (mode !== '1p') {
+                initPlayer(player2);
+                document.getElementById('player2-section').style.display = 'block';
+                document.getElementById('player2-info').style.display = 'block';
+                document.getElementById('player2-controls').style.display = mode === '2p' ? 'block' : 'none';
+            } else {
+                document.getElementById('player2-section').style.display = 'none';
+                document.getElementById('player2-info').style.display = 'none';
+                document.getElementById('player2-controls').style.display = 'none';
+            }
+
+            // UI更新
+            document.getElementById('player1-title').textContent = mode === '1p' ? 'Player' : 'Player 1';
+            document.getElementById('player2-title').textContent = 
+                mode === 'cpu' ? `CPU (${difficulty.toUpperCase()})` : 'Player 2';
+            document.getElementById('player2-info').innerHTML = 
+                `${mode === 'cpu' ? `CPU (${difficulty.toUpperCase()})` : 'Player 2'}: <span id="player2-score">0</span>`;
+
+            isPlaying = true;
+            document.getElementById('winner-info').style.display = 'none';
+            
+            showGame();
+            initGrids();
+            updateDisplay();
+            
+            // ゲームループ開始
+            gameInterval = setInterval(gameLoop, 1000);
+            
+            if (mode === 'cpu') {
+                const speeds = { easy: 800, normal: 600, hard: 400, lunatic: 200 };
+                cpuInterval = setInterval(cpuMove, speeds[difficulty]);
+            }
+        }
+
+        function stopGame() {
+            isPlaying = false;
+            if (gameInterval) {
+                clearInterval(gameInterval);
+                gameInterval = null;
+            }
+            if (cpuInterval) {
+                clearInterval(cpuInterval);
+                cpuInterval = null;
+            }
+        }
+
+        function initPlayer(player) {
+            player.grid = Array(ROWS).fill().map(() => Array(COLS).fill(null));
+            player.currentPuyo = generatePuyo();
+            player.nextPuyo = generatePuyo();
+            player.score = 0;
+            player.gameOver = false;
+            player.attackQueue = [];
+        }
+
+        function generatePuyo() {
+            return {
+                main: { color: COLORS[Math.floor(Math.random() * COLORS.length)], row: 0, col: 2 },
+                sub: { color: COLORS[Math.floor(Math.random() * COLORS.length)], row: 0, col: 3 },
+                rotation: 0
+            };
+        }
+
+        function initGrids() {
+            // Player 1 grid
+            const grid1 = document.getElementById('player1-grid');
+            grid1.innerHTML = '';
+            for (let i = 0; i < ROWS * COLS; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'puyo-cell';
+                cell.id = `p1-cell-${i}`;
+                grid1.appendChild(cell);
+            }
+
+            // Player 2 grid (if needed)
+            if (gameMode !== '1p') {
+                const grid2 = document.getElementById('player2-grid');
+                grid2.innerHTML = '';
+                for (let i = 0; i < ROWS * COLS; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'puyo-cell';
+                    cell.id = `p2-cell-${i}`;
+                    grid2.appendChild(cell);
+                }
+            }
+        }
+
+        // ゲームロジック
+        function gameLoop() {
+            if (!isPlaying) return;
+            
+            dropPuyo(player1, '1');
+            if (gameMode === '2p' || gameMode === 'cpu') {
+                dropPuyo(player2, '2');
+            }
+            
+            updateDisplay();
+        }
+
+        function dropPuyo(player, playerNum) {
+            if (!player.currentPuyo || player.gameOver) return;
+
+            const movedPuyo = {
+                ...player.currentPuyo,
+                main: { ...player.currentPuyo.main, row: player.currentPuyo.main.row + 1 },
+                sub: { ...player.currentPuyo.sub, row: player.currentPuyo.sub.row + 1 }
+            };
+
+            if (isValidPosition(movedPuyo, player.grid)) {
+                player.currentPuyo = movedPuyo;
+            } else {
+                // ぷよを固定
+                placePuyo(player.currentPuyo, player.grid);
+                
+                // 重力適用
+                applyGravity(player.grid);
+                
+                // 連鎖処理
+                const result = processChains(player.grid);
+                
+                if (result.removed > 0) {
+                    player.score += result.removed * 10 * Math.pow(2, result.chains - 1);
+                    
+                    // 攻撃計算
+                    if ((gameMode === '2p' || gameMode === 'cpu') && result.chains > 1) {
+                        const attackPower = Math.floor(result.chains * result.removed / 8);
+                        const opponent = playerNum === '1' ? player2 : player1;
+                        for (let i = 0; i < attackPower; i++) {
+                            opponent.attackQueue.push('gray');
+                        }
+                    }
+                }
+
+                // お邪魔ぷよ追加
+                if (player.attackQueue.length > 0) {
+                    addAttackPuyos(player.grid, player.attackQueue.length);
+                    player.attackQueue = [];
+                }
+
+                // ゲームオーバーチェック
+                if (player.grid[1][2] || player.grid[1][3]) {
+                    player.gameOver = true;
+                    if (gameMode !== '1p') {
+                        const winner = playerNum === '1' ? 
+                            (gameMode === 'cpu' ? 'CPU' : 'Player 2') : 'Player 1';
+                        document.getElementById('winner-info').textContent = `${winner} Win!`;
+                        document.getElementById('winner-info').style.display = 'block';
+                        stopGame();
+                    }
+                    return;
+                }
+
+                // 次のぷよ
+                player.currentPuyo = player.nextPuyo;
+                player.nextPuyo = generatePuyo();
+            }
+        }
+
+        function isValidPosition(puyo, grid) {
+            const { main, sub } = puyo;
+            return (
+                main.row >= 0 && main.row < ROWS && 
+                main.col >= 0 && main.col < COLS &&
+                sub.row >= 0 && sub.row < ROWS &&
+                sub.col >= 0 && sub.col < COLS &&
+                !grid[main.row][main.col] &&
+                !grid[sub.row][sub.col]
+            );
+        }
+
+        function placePuyo(puyo, grid) {
+            grid[puyo.main.row][puyo.main.col] = puyo.main.color;
+            grid[puyo.sub.row][puyo.sub.col] = puyo.sub.color;
+        }
+
+        function applyGravity(grid) {
+            for (let col = 0; col < COLS; col++) {
+                const column = [];
+                for (let row = ROWS - 1; row >= 0; row--) {
+                    if (grid[row][col]) {
+                        column.push(grid[row][col]);
+                        grid[row][col] = null;
+                    }
+                }
+                for (let i = 0; i < column.length; i++) {
+                    grid[ROWS - 1 - i][col] = column[i];
+                }
+            }
+        }
+
+        function processChains(grid) {
+            let totalRemoved = 0;
+            let chainCount = 0;
+
+            while (true) {
+                const toRemove = findConnectedGroups(grid);
+                if (toRemove.length === 0) break;
+
+                chainCount++;
+                totalRemoved += toRemove.length;
+                
+                toRemove.forEach(({ row, col }) => {
+                    grid[row][col] = null;
+                });
+                
+                applyGravity(grid);
+            }
+
+            return { removed: totalRemoved, chains: chainCount };
+        }
+
+        function findConnectedGroups(grid) {
+            const visited = Array(ROWS).fill().map(() => Array(COLS).fill(false));
+            const toRemove = [];
+
+            function dfs(row, col, color, group) {
+                if (row < 0 || row >= ROWS || col < 0 || col >= COLS || 
+                    visited[row][col] || !grid[row][col] || grid[row][col] !== color) {
+                    return;
+                }
+                
+                visited[row][col] = true;
+                group.push({ row, col });
+                
+                dfs(row + 1, col, color, group);
+                dfs(row - 1, col, color, group);
+                dfs(row, col + 1, color, group);
+                dfs(row, col - 1, color, group);
+            }
+
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (grid[row][col] && !visited[row][col] && grid[row][col] !== 'gray') {
+                        const group = [];
+                        dfs(row, col, grid[row][col], group);
+                        if (group.length >= 4) {
+                            toRemove.push(...group);
+                        }
+                    }
+                }
+            }
+
+            return toRemove;
+        }
+
+        function addAttackPuyos(grid, count) {
+            for (let i = 0; i < count; i++) {
+                for (let row = ROWS - 1; row >= 0; row--) {
+                    for (let col = 0; col < COLS; col++) {
+                        if (!grid[row][col]) {
+                            grid[row][col] = 'gray';
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            applyGravity(grid);
+        }
+
+        // CPU AI (簡単版)
+        function cpuMove() {
+            if (gameMode !== 'cpu' || !player2.currentPuyo || player2.gameOver) return;
+
+            const settings = {
+                easy: { randomChance: 0.7 },
+                normal: { randomChance: 0.4 },
+                hard: { randomChance: 0.2 },
+                lunatic: { randomChance: 0.05 }
+            };
+
+            const setting = settings[cpuDifficulty];
+            
+            if (Math.random() < setting.randomChance) {
+                const actions = ['left', 'right', 'rotate', 'drop'];
+                const action = actions[Math.floor(Math.random() * actions.length)];
+                executeCPUAction(action);
+            } else {
+                // 簡単な戦略: 一番低い列を狙う
+                const bestCol = findLowestColumn(player2.grid);
+                const currentCol = player2.currentPuyo.main.col;
+                
+                if (currentCol < bestCol) {
+                    executeCPUAction('right');
+                } else if (currentCol > bestCol) {
+                    executeCPUAction('left');
+                } else {
+                    executeCPUAction('drop');
+                }
+            }
+        }
+
+        function executeCPUAction(action) {
+            const player = player2;
+            let newPuyo = { ...player.currentPuyo };
+
+            switch (action) {
+                case 'left':
+                    newPuyo = {
+                        ...newPuyo,
+                        main: { ...newPuyo.main, col: newPuyo.main.col - 1 },
+                        sub: { ...newPuyo.sub, col: newPuyo.sub.col - 1 }
+                    };
+                    if (isValidPosition(newPuyo, player.grid)) {
+                        player.currentPuyo = newPuyo;
+                    }
+                    break;
+                case 'right':
+                    newPuyo = {
+                        ...newPuyo,
+                        main: { ...newPuyo.main, col: newPuyo.main.col + 1 },
+                        sub: { ...newPuyo.sub, col: newPuyo.sub.col + 1 }
+                    };
+                    if (isValidPosition(newPuyo, player.grid)) {
+                        player.currentPuyo = newPuyo;
+                    }
+                    break;
+                case 'rotate':
+                    newPuyo = rotatePuyo(newPuyo);
+                    if (isValidPosition(newPuyo, player.grid)) {
+                        player.currentPuyo = newPuyo;
+                    }
+                    break;
+                case 'drop':
+                    dropPuyo(player2, '2');
+                    break;
+            }
+        }
+
+        function findLowestColumn(grid) {
+            let bestCol = 0;
+            let lowestHeight = ROWS;
+            
+            for (let col = 0; col < COLS; col++) {
+                for (let row = 0; row < ROWS; row++) {
+                    if (grid[row][col]) {
+                        if (row < lowestHeight) {
+                            lowestHeight = row;
+                            bestCol = col;
+                        }
+                        break;
+                    }
+                }
+            }
+            
+            return bestCol;
+        }
+
+        function rotatePuyo(puyo) {
+            const { main, sub, rotation } = puyo;
+            const newRotation = (rotation + 1) % 4;
+            let newSub = { 
+                color: sub.color, // 色は保持
+                row: main.row,
+                col: main.col
+            };
+
+            switch (newRotation) {
+                case 0: // 上
+                    newSub.row = main.row - 1;
+                    newSub.col = main.col;
+                    break;
+                case 1: // 右
+                    newSub.row = main.row;
+                    newSub.col = main.col + 1;
+                    break;
+                case 2: // 下
+                    newSub.row = main.row + 1;
+                    newSub.col = main.col;
+                    break;
+                case 3: // 左
+                    newSub.row = main.row;
+                    newSub.col = main.col - 1;
+                    break;
+            }
+
+            return { 
+                main: main, // メインぷよはそのまま
+                sub: newSub, // サブぷよの位置のみ変更
+                rotation: newRotation 
+            };
+        }
+
+        // 表示更新
+        function updateDisplay() {
+            updateGrid(player1, '1');
+            if (gameMode !== '1p') {
+                updateGrid(player2, '2');
+            }
+            
+            document.getElementById('player1-score').textContent = player1.score;
+            if (gameMode !== '1p') {
+                document.getElementById('player2-score').textContent = player2.score;
+            }
+            
+            updateNextPuyo(player1, '1');
+            if (gameMode !== '1p') {
+                updateNextPuyo(player2, '2');
+            }
+        }
+
+        function updateGrid(player, playerNum) {
+            const grid = [...player.grid.map(row => [...row])];
+            
+            // 現在のぷよを追加
+            if (player.currentPuyo) {
+                grid[player.currentPuyo.main.row][player.currentPuyo.main.col] = player.currentPuyo.main.color;
+                grid[player.currentPuyo.sub.row][player.currentPuyo.sub.col] = player.currentPuyo.sub.color;
+            }
+            
+            // グリッド更新
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const cellId = `p${playerNum}-cell-${row * COLS + col}`;
+                    const cell = document.getElementById(cellId);
+                    const color = grid[row][col];
+                    
+                    cell.className = `puyo-cell ${color ? `puyo-${color}` : ''}`;
+                }
+            }
+        }
+
+        function updateNextPuyo(player, playerNum) {
+            const container = document.getElementById(`player${playerNum}-next`);
+            container.innerHTML = '';
+            
+            if (player.nextPuyo) {
+                const sub = document.createElement('div');
+                sub.className = `next-single puyo-${player.nextPuyo.sub.color}`;
+                container.appendChild(sub);
+                
+                const main = document.createElement('div');
+                main.className = `next-single puyo-${player.nextPuyo.main.color}`;
+                container.appendChild(main);
+            }
+        }
+
+        // キーボード操作
+        document.addEventListener('keydown', function(e) {
+            if (!isPlaying) return;
+
+            // Player 1 controls
+            if (gameMode !== 'menu' && player1.currentPuyo && !player1.gameOver) {
+                switch (e.key) {
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        const leftPuyo1 = {
+                            ...player1.currentPuyo,
+                            main: { ...player1.currentPuyo.main, col: player1.currentPuyo.main.col - 1 },
+                            sub: { ...player1.currentPuyo.sub, col: player1.currentPuyo.sub.col - 1 }
+                        };
+                        if (isValidPosition(leftPuyo1, player1.grid)) {
+                            player1.currentPuyo = leftPuyo1;
+                        }
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        const rightPuyo1 = {
+                            ...player1.currentPuyo,
+                            main: { ...player1.currentPuyo.main, col: player1.currentPuyo.main.col + 1 },
+                            sub: { ...player1.currentPuyo.sub, col: player1.currentPuyo.sub.col + 1 }
+                        };
+                        if (isValidPosition(rightPuyo1, player1.grid)) {
+                            player1.currentPuyo = rightPuyo1;
+                        }
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        const rotatedPuyo1 = rotatePuyo(player1.currentPuyo);
+                        if (isValidPosition(rotatedPuyo1, player1.grid)) {
+                            player1.currentPuyo = rotatedPuyo1;
+                        }
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        dropPuyo(player1, '1');
+                        break;
+                }
+            }
+
+            // Player 2 controls (2P mode only)
+            if (gameMode === '2p' && player2.currentPuyo && !player2.gameOver) {
+                switch (e.key.toLowerCase()) {
+                    case 'a':
+                        const leftPuyo2 = {
+                            ...player2.currentPuyo,
+                            main: { ...player2.currentPuyo.main, col: player2.currentPuyo.main.col - 1 },
+                            sub: { ...player2.currentPuyo.sub, col: player2.currentPuyo.sub.col - 1 }
+                        };
+                        if (isValidPosition(leftPuyo2, player2.grid)) {
+                            player2.currentPuyo = leftPuyo2;
+                        }
+                        break;
+                    case 'd':
+                        const rightPuyo2 = {
+                            ...player2.currentPuyo,
+                            main: { ...player2.currentPuyo.main, col: player2.currentPuyo.main.col + 1 },
+                            sub: { ...player2.currentPuyo.sub, col: player2.currentPuyo.sub.col + 1 }
+                        };
+                        if (isValidPosition(rightPuyo2, player2.grid)) {
+                            player2.currentPuyo = rightPuyo2;
+                        }
+                        break;
+                    case 'w':
+                        const rotatedPuyo2 = rotatePuyo(player2.currentPuyo);
+                        if (isValidPosition(rotatedPuyo2, player2.grid)) {
+                            player2.currentPuyo = rotatedPuyo2;
+                        }
+                        break;
+                    case 's':
+                        dropPuyo(player2, '2');
+                        break;
+                }
+            }
+            
+            updateDisplay();
+        });
+
+        // 初期表示
+        showMenu();
+    </script>
+</body>
+</html>
